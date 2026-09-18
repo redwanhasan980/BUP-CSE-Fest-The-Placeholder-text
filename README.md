@@ -184,7 +184,7 @@ s.t.       grid + solar_used + discharge = demand + charge                 every
 
 ```bash
 # 1. Clone
-git clone https://github.com/<github-user>/gridwise-llm.git
+git clone https://github.com/redwanhasan980/BUP-CSE-Fest-The-Placeholder-text.git
 cd gridwise-llm
 
 # 2. Create a virtual environment and install dependencies
