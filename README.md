@@ -3,17 +3,17 @@
 **An API that reads campus operators' plain-English notes with an LLM, checks the result with deterministic guardrails, and returns the cheapest valid 24-hour energy plan.**
 
 > Submission for the **BUP CSE Fest 2026 Hackathon — Online Preliminary** (in association with Poridhi.io)
-> Challenge: *Smart Campus Energy Optimization — LLM-Assisted Operator Directive Interpretation*
+> Challenge: _Smart Campus Energy Optimization — LLM-Assisted Operator Directive Interpretation_
 
-| | |
-|---|---|
-| **Live API (base URL)** | `https://<your-deployment-host>` |
-| **Docker image** | `docker.io/<dockerhub-user>/gridwise-llm:v1.0.0` (digest `sha256:<digest>`) |
-| **Solution video (≤ 3 min)** | `<video link>` |
-| **Requirements spec** | [`SRS.md`](SRS.md) |
-| **Primary LLM** | `openai/gpt-oss-120b` via Groq (OpenAI-compatible API) |
-| **Secondary LLM** | `gemini-2.0-flash` via Google Gemini (OpenAI-compatible API) |
-| **Solver** | SciPy `linprog` with the HiGHS LP solver |
+|                              |                                                                             |
+| ---------------------------- | --------------------------------------------------------------------------- |
+| **Live API (base URL)**      | `https://bup-energy.vercel.app/`                                            |
+| **Docker image**             | `docker.io/<dockerhub-user>/gridwise-llm:v1.0.0` (digest `sha256:<digest>`) |
+| **Solution video (≤ 3 min)** | `<video link>`                                                              |
+| **Requirements spec**        | [`SRS.md`](SRS.md)                                                          |
+| **Primary LLM**              | `openai/gpt-oss-120b` via Groq (OpenAI-compatible API)                      |
+| **Secondary LLM**            | `gemini-2.0-flash` via Google Gemini (OpenAI-compatible API)                |
+| **Solver**                   | SciPy `linprog` with the HiGHS LP solver                                    |
 
 ---
 
@@ -48,7 +48,7 @@ For the next 24 hours, the service is given:
 
 - hourly demand, solar forecast, and tariff
 - the battery limits
-- **1–3 operator notes** in plain English, for example *"Do not charge the battery between 2 PM and 4 PM."* Some notes are real operating constraints; others are distractors such as *"The cafeteria menu changes tomorrow."*
+- **1–3 operator notes** in plain English, for example _"Do not charge the battery between 2 PM and 4 PM."_ Some notes are real operating constraints; others are distractors such as _"The cafeteria menu changes tomorrow."_
 
 GridWise LLM:
 
@@ -58,14 +58,14 @@ GridWise LLM:
 4. **Optimizes** the schedule for the minimum grid cost. The result is globally optimal for the interpreted directives.
 5. **Verifies** the final plan hour by hour, the same way the judge does, before responding.
 
-| Directive | Effect on the schedule |
-|---|---|
-| `solar_reduction` | Usable solar = forecast × `factor` in the listed hours |
-| `minimum_battery_reserve` | Battery energy ≥ the reserve in the listed hours |
-| `no_charge_window` | Battery charging = 0 in the listed hours |
-| `no_discharge_window` | Battery discharging = 0 in the listed hours |
-| `max_grid_window` | Grid import ≤ the cap in the listed hours |
-| `no_op` | Irrelevant note, no effect (`applies = false`, `structured_adjustment = null`) |
+| Directive                 | Effect on the schedule                                                         |
+| ------------------------- | ------------------------------------------------------------------------------ |
+| `solar_reduction`         | Usable solar = forecast × `factor` in the listed hours                         |
+| `minimum_battery_reserve` | Battery energy ≥ the reserve in the listed hours                               |
+| `no_charge_window`        | Battery charging = 0 in the listed hours                                       |
+| `no_discharge_window`     | Battery discharging = 0 in the listed hours                                    |
+| `max_grid_window`         | Grid import ≤ the cap in the listed hours                                      |
+| `no_op`                   | Irrelevant note, no effect (`applies = false`, `structured_adjustment = null`) |
 
 ---
 
@@ -85,11 +85,11 @@ flowchart LR
 
 **Design principle.** Each job goes to the tool best suited to it:
 
-| Stage | Tool | Reason |
-|---|---|---|
-| Understanding free text | **LLM** | Handles paraphrases such as "PV output", "one-fifth", or "13:00–15:00". |
-| Checking the interpretation | **Deterministic code** | The same rules every time, and invented constraints are impossible. |
-| Scheduling | **LP solver** | Exact, fast (under 50 ms), and provably minimum-cost. |
+| Stage                       | Tool                   | Reason                                                                  |
+| --------------------------- | ---------------------- | ----------------------------------------------------------------------- |
+| Understanding free text     | **LLM**                | Handles paraphrases such as "PV output", "one-fifth", or "13:00–15:00". |
+| Checking the interpretation | **Deterministic code** | The same rules every time, and invented constraints are impossible.     |
+| Scheduling                  | **LP solver**          | Exact, fast (under 50 ms), and provably minimum-cost.                   |
 
 A full specification, with requirement IDs, the math model, the failure matrix, and rubric traceability, is in [`SRS.md`](SRS.md).
 
@@ -99,18 +99,24 @@ A full specification, with requirement IDs, the math model, the failure matrix, 
 
 The LLM is **mandatory and central**. It produces the interpretation that the optimizer consumes. It is not used only for summaries.
 
-- **One call per scenario.** All 1–3 notes are sent together, each tagged with its index. The LLM receives *only the notes*, never the demand, solar, tariff, or battery data, so it cannot alter base parameters.
+- **One call per scenario.** All 1–3 notes are sent together, each tagged with its index. The LLM receives _only the notes_, never the demand, solar, tariff, or battery data, so it cannot alter base parameters.
 - **Structured output.** The response is constrained by a strict JSON schema, with `temperature = 0` and the lowest reasoning effort.
 - **Intermediate representation.** The LLM returns time **windows** (`start_hour`, exclusive `end_hour`) and, for reserves, an optional **percent of capacity**. Code then expands the windows into hour lists and converts percentages into kWh. This removes the two most common LLM mistakes: off-by-one hour ranges and arithmetic.
-- **The prompt contains** the directive catalogue, the time and percentage normalization rules (for example, "80% reduction" gives `factor = 0.2`, while "drop *to* 20%" also gives `0.2`), the relevance rules for `no_op`, and synthetic few-shot paraphrases. No public sample wording or values are hard-coded.
+- **The prompt contains** the directive catalogue, the time and percentage normalization rules (for example, "80% reduction" gives `factor = 0.2`, while "drop _to_ 20%" also gives `0.2`), the relevance rules for `no_op`, and synthetic few-shot paraphrases. No public sample wording or values are hard-coded.
 
 Example of what the LLM returns, before normalization:
 
 ```json
-{"note_index": 0, "directive_type": "solar_reduction",
- "windows": [{"start_hour": 12, "end_hour": 14}], "factor": 0.25,
- "minimum_energy_kwh": null, "reserve_percent_of_capacity": null, "max_grid_kwh": null,
- "explanation": "Panel washing leaves about 25% usable solar from 12:00 to 14:00."}
+{
+  "note_index": 0,
+  "directive_type": "solar_reduction",
+  "windows": [{ "start_hour": 12, "end_hour": 14 }],
+  "factor": 0.25,
+  "minimum_energy_kwh": null,
+  "reserve_percent_of_capacity": null,
+  "max_grid_kwh": null,
+  "explanation": "Panel washing leaves about 25% usable solar from 12:00 to 14:00."
+}
 ```
 
 This becomes `{"hours": [12, 13], "factor": 0.25}`.
@@ -134,17 +140,17 @@ The rule-based parser is a **last-resort safety net only**. It is never the prim
 
 The LLM output is treated as **untrusted data** until every check passes:
 
-| Check | Rule |
-|---|---|
-| Allowed types | `directive_type` ∈ the six supported values. Anything else is rejected. |
-| Note mapping | Exactly one entry per note, with `note_index` = 0..N-1 and no gaps or duplicates. |
-| Hours | Unique integers from 0 to 23, sorted ascending. Windows are start-inclusive and end-exclusive. |
-| Solar factor | 0 ≤ `factor` ≤ 1 (the fraction that *remains*). |
-| Battery reserve | Finite, ≥ 0, and ≤ `capacity_kwh`. |
-| Grid cap | Finite and ≥ 0. |
+| Check               | Rule                                                                                                                          |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Allowed types       | `directive_type` ∈ the six supported values. Anything else is rejected.                                                       |
+| Note mapping        | Exactly one entry per note, with `note_index` = 0..N-1 and no gaps or duplicates.                                             |
+| Hours               | Unique integers from 0 to 23, sorted ascending. Windows are start-inclusive and end-exclusive.                                |
+| Solar factor        | 0 ≤ `factor` ≤ 1 (the fraction that _remains_).                                                                               |
+| Battery reserve     | Finite, ≥ 0, and ≤ `capacity_kwh`.                                                                                            |
+| Grid cap            | Finite and ≥ 0.                                                                                                               |
 | `applies` semantics | `no_op` means `applies=false` and `structured_adjustment=null`. Every other type means `applies=true` with the exact key set. |
-| No invention | The interpretation cannot change demand, tariff, base solar, or battery parameters. |
-| Final replay | After optimization, the plan is re-simulated hour by hour to prove every directive and energy rule holds. |
+| No invention        | The interpretation cannot change demand, tariff, base solar, or battery parameters.                                           |
+| Final replay        | After optimization, the plan is re-simulated hour by hour to prove every directive and energy rule holds.                     |
 
 **On failure**, the service sends one repair prompt containing the violation list, then fails over to the next provider, then uses the degraded parser. A note that still cannot be interpreted safely becomes `no_op` with an explanation. **The service never crashes and never invents a directive.**
 
@@ -248,20 +254,20 @@ docker run --rm -p 8000:8000 --env-file .env gridwise-llm:local
 
 Only the **names** are listed here. Never commit values. `.env.example` contains the names with empty values.
 
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `LLM_PRIMARY_API_KEY` | **Yes** | — | API key for the primary provider (Groq). |
-| `LLM_PRIMARY_BASE_URL` | No | `https://api.groq.com/openai/v1` | OpenAI-compatible base URL of the primary provider. |
-| `LLM_PRIMARY_MODEL` | No | `openai/gpt-oss-120b` | Primary model identifier. |
-| `LLM_SECONDARY_API_KEY` | No | — | API key for the secondary provider (Google Gemini). If empty, the secondary is skipped. |
-| `LLM_SECONDARY_BASE_URL` | No | `https://generativelanguage.googleapis.com/v1beta/openai/` | OpenAI-compatible base URL of the secondary provider. |
-| `LLM_SECONDARY_MODEL` | No | `gemini-2.0-flash` | Secondary model identifier. |
-| `LLM_TIMEOUT_SECONDS` | No | `8` | Timeout for each LLM attempt. |
-| `LLM_MAX_REPAIR_ATTEMPTS` | No | `1` | Repair prompts sent after a guardrail violation. |
-| `ENABLE_RULE_FALLBACK` | No | `true` | Enables the degraded parser when every LLM attempt fails. |
-| `REQUEST_DEADLINE_SECONDS` | No | `25` | Internal deadline (the judge timeout is 30 s). |
-| `PORT` | No | `8000` | HTTP port. |
-| `LOG_LEVEL` | No | `INFO` | Log verbosity. Secrets are never logged at any level. |
+| Variable                   | Required | Default                                                    | Description                                                                             |
+| -------------------------- | -------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `LLM_PRIMARY_API_KEY`      | **Yes**  | —                                                          | API key for the primary provider (Groq).                                                |
+| `LLM_PRIMARY_BASE_URL`     | No       | `https://api.groq.com/openai/v1`                           | OpenAI-compatible base URL of the primary provider.                                     |
+| `LLM_PRIMARY_MODEL`        | No       | `openai/gpt-oss-120b`                                      | Primary model identifier.                                                               |
+| `LLM_SECONDARY_API_KEY`    | No       | —                                                          | API key for the secondary provider (Google Gemini). If empty, the secondary is skipped. |
+| `LLM_SECONDARY_BASE_URL`   | No       | `https://generativelanguage.googleapis.com/v1beta/openai/` | OpenAI-compatible base URL of the secondary provider.                                   |
+| `LLM_SECONDARY_MODEL`      | No       | `gemini-2.0-flash`                                         | Secondary model identifier.                                                             |
+| `LLM_TIMEOUT_SECONDS`      | No       | `8`                                                        | Timeout for each LLM attempt.                                                           |
+| `LLM_MAX_REPAIR_ATTEMPTS`  | No       | `1`                                                        | Repair prompts sent after a guardrail violation.                                        |
+| `ENABLE_RULE_FALLBACK`     | No       | `true`                                                     | Enables the degraded parser when every LLM attempt fails.                               |
+| `REQUEST_DEADLINE_SECONDS` | No       | `25`                                                       | Internal deadline (the judge timeout is 30 s).                                          |
+| `PORT`                     | No       | `8000`                                                     | HTTP port.                                                                              |
+| `LOG_LEVEL`                | No       | `INFO`                                                     | Log verbosity. Secrets are never logged at any level.                                   |
 
 Any OpenAI-compatible provider works. Change the `*_BASE_URL` and `*_MODEL` values, with no code changes needed.
 
@@ -289,13 +295,16 @@ Any OpenAI-compatible provider works. Change the `*_BASE_URL` and `*_MODEL` valu
     "The cafeteria menu changes tomorrow."
   ],
   "hours": [
-    {"hour": 0, "demand_kwh": 180, "solar_kwh": 0, "tariff_bdt_per_kwh": 7},
+    { "hour": 0, "demand_kwh": 180, "solar_kwh": 0, "tariff_bdt_per_kwh": 7 },
     "... 22 more hourly entries ...",
-    {"hour": 23, "demand_kwh": 200, "solar_kwh": 0, "tariff_bdt_per_kwh": 9}
+    { "hour": 23, "demand_kwh": 200, "solar_kwh": 0, "tariff_bdt_per_kwh": 9 }
   ],
   "battery": {
-    "capacity_kwh": 500, "initial_energy_kwh": 200, "minimum_energy_kwh": 50,
-    "max_charge_kwh_per_hour": 100, "max_discharge_kwh_per_hour": 100
+    "capacity_kwh": 500,
+    "initial_energy_kwh": 200,
+    "minimum_energy_kwh": 50,
+    "max_charge_kwh_per_hour": 100,
+    "max_discharge_kwh_per_hour": 100
   }
 }
 ```
@@ -306,19 +315,37 @@ Any OpenAI-compatible provider works. Change the `*_BASE_URL` and `*_MODEL` valu
 {
   "scenario_id": "GRID-101",
   "directive_interpretation": [
-    {"note_index": 0, "applies": true, "directive_type": "solar_reduction",
-     "structured_adjustment": {"hours": [13, 14], "factor": 0.2},
-     "explanation": "Solar is expected to fall to about 20% from 13:00 to 15:00."},
-    {"note_index": 1, "applies": true, "directive_type": "no_charge_window",
-     "structured_adjustment": {"hours": [14, 15]},
-     "explanation": "Battery charging is not allowed from 14:00 to 16:00."},
-    {"note_index": 2, "applies": false, "directive_type": "no_op",
-     "structured_adjustment": null,
-     "explanation": "Cafeteria menu change does not affect the energy schedule."}
+    {
+      "note_index": 0,
+      "applies": true,
+      "directive_type": "solar_reduction",
+      "structured_adjustment": { "hours": [13, 14], "factor": 0.2 },
+      "explanation": "Solar is expected to fall to about 20% from 13:00 to 15:00."
+    },
+    {
+      "note_index": 1,
+      "applies": true,
+      "directive_type": "no_charge_window",
+      "structured_adjustment": { "hours": [14, 15] },
+      "explanation": "Battery charging is not allowed from 14:00 to 16:00."
+    },
+    {
+      "note_index": 2,
+      "applies": false,
+      "directive_type": "no_op",
+      "structured_adjustment": null,
+      "explanation": "Cafeteria menu change does not affect the energy schedule."
+    }
   ],
   "hourly_plan": [
-    {"hour": 0, "grid_kwh": 180.0, "solar_used_kwh": 0.0, "battery_action": "idle",
-     "battery_kwh": 0.0, "battery_energy_after_kwh": 200.0},
+    {
+      "hour": 0,
+      "grid_kwh": 180.0,
+      "solar_used_kwh": 0.0,
+      "battery_action": "idle",
+      "battery_kwh": 0.0,
+      "battery_energy_after_kwh": 200.0
+    },
     "... 23 more entries (hours 1–23) ..."
   ],
   "total_grid_kwh": 0.0,
@@ -328,16 +355,16 @@ Any OpenAI-compatible provider works. Change the `*_BASE_URL` and `*_MODEL` valu
 }
 ```
 
-*(The totals shown are placeholders. Real values are computed from the plan.)*
+_(The totals shown are placeholders. Real values are computed from the plan.)_
 
 **Error responses** always use the shape `{"error": {"code": "...", "message": "..."}}`:
 
-| Status | Code | When |
-|---|---|---|
-| 400 | `MALFORMED_JSON` | The body is not valid JSON. |
-| 400 | `INVALID_REQUEST` | Missing or mistyped fields, not exactly 24 unique hours 0–23, or not 1–3 non-empty notes. |
-| 422 | `SEMANTIC_INVALID` / `INFEASIBLE_SCENARIO` | Well-formed but impossible values, or a base scenario with no feasible schedule. |
-| 500 | `INTERNAL_ERROR` | A controlled internal error, with no stack trace or secrets. |
+| Status | Code                                       | When                                                                                      |
+| ------ | ------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| 400    | `MALFORMED_JSON`                           | The body is not valid JSON.                                                               |
+| 400    | `INVALID_REQUEST`                          | Missing or mistyped fields, not exactly 24 unique hours 0–23, or not 1–3 non-empty notes. |
+| 422    | `SEMANTIC_INVALID` / `INFEASIBLE_SCENARIO` | Well-formed but impossible values, or a base scenario with no feasible schedule.          |
+| 500    | `INTERNAL_ERROR`                           | A controlled internal error, with no stack trace or secrets.                              |
 
 ---
 
@@ -407,15 +434,15 @@ gridwise-llm/
 
 ## 12. Reliability, performance and security
 
-| Area | What we do |
-|---|---|
-| **Latency** | One LLM call per scenario, and an LP solve in under 50 ms. Typical end-to-end time is about 1–3.5 s, against a p95 target of ≤ 5 s and a judge timeout of 30 s. |
-| **Health** | `/health` never calls the LLM and is ready within seconds of start. |
-| **Resilience** | Two independent LLM providers, a repair loop, a degraded parser, and a 25 s internal deadline. Valid requests never return 5xx. |
-| **Determinism** | `temperature = 0` and an in-memory interpretation cache, so repeated requests give identical answers and use less rate limit. |
-| **Concurrency** | The solver runs in a worker thread, so the event loop is never blocked. |
-| **Secrets** | Supplied only through environment variables. `.env` is git-ignored and docker-ignored, and the image holds no credentials. Logs and responses never contain keys, prompts, or stack traces. |
-| **Data** | Only the synthetic scenario data sent by the harness is processed. Nothing is persisted. |
+| Area            | What we do                                                                                                                                                                                  |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Latency**     | One LLM call per scenario, and an LP solve in under 50 ms. Typical end-to-end time is about 1–3.5 s, against a p95 target of ≤ 5 s and a judge timeout of 30 s.                             |
+| **Health**      | `/health` never calls the LLM and is ready within seconds of start.                                                                                                                         |
+| **Resilience**  | Two independent LLM providers, a repair loop, a degraded parser, and a 25 s internal deadline. Valid requests never return 5xx.                                                             |
+| **Determinism** | `temperature = 0` and an in-memory interpretation cache, so repeated requests give identical answers and use less rate limit.                                                               |
+| **Concurrency** | The solver runs in a worker thread, so the event loop is never blocked.                                                                                                                     |
+| **Secrets**     | Supplied only through environment variables. `.env` is git-ignored and docker-ignored, and the image holds no credentials. Logs and responses never contain keys, prompts, or stack traces. |
+| **Data**        | Only the synthetic scenario data sent by the harness is processed. Nothing is persisted.                                                                                                    |
 
 ---
 
@@ -432,20 +459,16 @@ gridwise-llm/
 
 ## 14. Dependencies and credits
 
-| Dependency | Purpose | License |
-|---|---|---|
-| [FastAPI](https://fastapi.tiangolo.com/) + [Uvicorn](https://www.uvicorn.org/) | HTTP API and ASGI server | MIT / BSD-3 |
-| [Pydantic v2](https://docs.pydantic.dev/) | Request, response, and IR validation | MIT |
-| [NumPy](https://numpy.org/) + [SciPy](https://scipy.org/) (HiGHS solver) | Linear programming | BSD-3 / MIT |
-| [OpenAI Python SDK](https://github.com/openai/openai-python) | Client for OpenAI-compatible LLM APIs | Apache-2.0 |
-| [pytest](https://pytest.org/) + [httpx](https://www.python-httpx.org/) | Testing | MIT / BSD-3 |
+| Dependency                                                                     | Purpose                               | License     |
+| ------------------------------------------------------------------------------ | ------------------------------------- | ----------- |
+| [FastAPI](https://fastapi.tiangolo.com/) + [Uvicorn](https://www.uvicorn.org/) | HTTP API and ASGI server              | MIT / BSD-3 |
+| [Pydantic v2](https://docs.pydantic.dev/)                                      | Request, response, and IR validation  | MIT         |
+| [NumPy](https://numpy.org/) + [SciPy](https://scipy.org/) (HiGHS solver)       | Linear programming                    | BSD-3 / MIT |
+| [OpenAI Python SDK](https://github.com/openai/openai-python)                   | Client for OpenAI-compatible LLM APIs | Apache-2.0  |
+| [pytest](https://pytest.org/) + [httpx](https://www.python-httpx.org/)         | Testing                               | MIT / BSD-3 |
 
 **LLM providers and models:** [Groq](https://console.groq.com/) (`openai/gpt-oss-120b`, an open-weight model) and [Google Gemini](https://aistudio.google.com/) (`gemini-2.0-flash`, accessed through Gemini's OpenAI-compatible endpoint).
 
 **AI assistance:** AI coding assistants were used for documentation and scaffolding support, as permitted by the official rulebook. The architecture, logic, and validation are the team's own work.
 
 **Challenge material:** the Problem Statement, Participant Guide, and Public Sample Cases are © BUP CSE Fest 2026 organizers. All scenario data is synthetic.
-
----
-
-<sub>Built for BUP CSE Fest 2026 · Team: `<team name>` · Members: `<names>`</sub>
