@@ -8,8 +8,7 @@
 |                              |                                                                             |
 | ---------------------------- | --------------------------------------------------------------------------- |
 | **Live API (base URL)**      | `https://bup-energy.vercel.app/`                                            |
-| **Docker image**             | `docker.io/<dockerhub-user>/gridwise-llm:v1.0.0` (digest `sha256:<digest>`) |
-| **Solution video (≤ 3 min)** | `<video link>`                                                              |
+| **Solution video (≤ 3 min)** | `https://drive.google.com/file/d/1j3WkQAf3ZbGdkm0hsKbU04m-a-OWEvTo/view?usp=sharing`                                                              |
 | **Requirements spec**        | [`SRS.md`](SRS.md)                                                          |
 | **Primary LLM**              | `openai/gpt-oss-120b` via Groq (OpenAI-compatible API)                      |
 | **Secondary LLM**            | `gemini-2.0-flash` via Google Gemini (OpenAI-compatible API)                |
